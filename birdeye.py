@@ -1,12 +1,18 @@
 import cv2
 import numpy as np
-from functions import getBirdView, getIntegratedView
+#from functions import getBirdView, getIntegratedView, pointsColorByDistance, framePointsToBirdPoints, getFramePoints
+from functions import *
+import pandas as pd
 
-vs = cv2.VideoCapture('TownCentreXVID.avi')
+data = pd.read_csv('data/TownCentre-groundtruth.top.txt')
+data.columns = ['numPersona','numFrame','headValid','bodyValid','headLeft','headTop','headRight','headBottom','bodyLeft','bodyTop','bodyRight','bodyBottom']
+
+vs = cv2.VideoCapture('data/TownCentreXVID.avi')
 
 w = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 h = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
+matrix = getMatrix(4500, 3000)
 
 #h = 400
 #w = int(vs.get(cv2.CAP_PROP_FRAME_WIDTH)/vs.get(cv2.CAP_PROP_FRAME_HEIGHT))*h
@@ -14,30 +20,34 @@ h = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 #quit()
 
 i=0
+stop_frame=500
 
-while (True and i<100):
+while (True and i<stop_frame):
   
   (grab, frame) = vs.read()
 
   if not grab:
     break
 
-  #fy = 400/h
-  #fx = (w/h)*fy
   fy = 400/h
-  frame = cv2.resize(frame, None, fx=fy, fy=fy, interpolation=cv2.INTER_CUBIC)
+  fx = fy
+  video_image = cv2.resize(frame, None, fx=fx, fy=fy, interpolation=cv2.INTER_CUBIC)
 
-  #frame = cv2.resize(frame, (w+200,h))
-  #print(frame.shape)
-  #a = np.random.rand(N,N)
-  #print(type(frame2))
+  #frame_points = [()]
 
-  points = [(2100,300),(2200,350)]
-  colors = [1,0]
+  frame_data = data[data['numFrame']==i]
 
-  frame2 = getBirdView(points, colors, (200,400))
+  frame_points = getFramePoints(frame_data)
 
-  integrated_image = getIntegratedView(frame, frame2)
+  points = framePointsToBirdPoints(frame_points, matrix)
+  #points = [(2100,300),(2200,350)]
+  #colors = [1,0]
+
+  birdv_points, colors = pointsColorByDistance(points, 100)
+
+  birdv_image = getBirdView(birdv_points, colors, (250,400))
+
+  integrated_image = getIntegratedView(video_image, birdv_image)
 
   cv2.imshow("Distanciamiento Social", integrated_image)
 
