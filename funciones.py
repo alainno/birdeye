@@ -1,40 +1,48 @@
 import numpy as np
 import cv2
 
-def drawBoundingBoxes(video_image, frame_data):
+def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors, colors, target_size):
+  red_color = (0,0,255) #BGR
+  green_color = (0,255,0)
+    
+  #print('len: ', len(birdv_points))
+  
+  i = 0
   for index, row in frame_data.iterrows():
-    cv2.rectangle(video_image, ( int(row['bodyLeft']), int(row['bodyTop']) ), ( int(row['bodyRight']), int(row['bodyBottom']) ), (0,255,0), 2, 1)
-  return video_image
+    
+    #print('birdv_points[index]: ', birdv_points[index])
+    
+    k = birdv_points_colors.index(birdv_points[i])
+    
+    color = red_color if colors[k] else green_color
+    
+    cv2.rectangle(video_image, ( int(row['bodyLeft']), int(row['bodyTop']) ), ( int(row['bodyRight']), int(row['bodyBottom']) ), color, 2, 1)
+  #print('index: ', index)
+    i+=1
+  #return video_image
+  return cv2.resize(video_image, target_size)
 
 def getBirdView(points, colors, target_size):
 
   red = (0,0,255) #BGR
   green = (0,255,0)
 
-  background = np.zeros((3000, 4500, 3), dtype=np.uint8)
+  background = np.zeros((1000, 1000, 3), dtype=np.uint8)
   background[:, :] = [0, 0, 0]
-
 
   for i, point in enumerate(points):
     color = red if colors[i] else green
-    #print('point:', point)
-    #print('color:', color)
-    cv2.circle(background, point, 25, color, -1)
+    cv2.circle(background, point, 7, color, -1)
 
   # ROI of bird eye view
-  cut_posx_min, cut_posx_max = (2000, 3400)
-  cut_posy_min, cut_posy_max = ( 200, 2800)
+  cut_posx_min, cut_posx_max = (350, 750)
+  cut_posy_min, cut_posy_max = (260, 900)
 
   bird_eye_view = background[cut_posy_min:cut_posy_max, 
                               cut_posx_min:cut_posx_max, 
                               :]
 
-  # Bird Eye View resize
   return cv2.resize(bird_eye_view, target_size)
-
-  #frame2 = np.ones((h,200,3),np.uint8)
-  #frame2[:,:]=(255,0,0)
-  #return frame2
 
 def __generate_partial_image(picture, partial_image, position, transparent=False):
     """
