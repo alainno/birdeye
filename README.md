@@ -14,6 +14,9 @@ Este programa analiza un video captado por una cámara en una calle e identifica
 
 [![RESULTADO](./img/output.jpg)](https://www.youtube.com/watch?v=4grqapP_r6I)
 
+**Video:**
+https://youtu.be/4grqapP_r6I
+
 ### :pencil: Procedimiento
 
 1. Selección del rectángulo a proyectar, en la vista de cámara.
