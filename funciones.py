@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors, colors, target_size):
+def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors, colors, target_size, lines=[]):
     """
     Dibujar a los boundingboxes
     Parámetros:
@@ -24,9 +24,30 @@ def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors
         cv2.rectangle(video_image, ( int(row['bodyLeft']), int(row['bodyTop']) ), ( int(row['bodyRight']), int(row['bodyBottom']) ), color, 2, 1)
         i+=1
     
+    #lines = [((100,100),(200,200))]
+    for line in lines:
+        a = birdv_points.index(line[0])
+        b = birdv_points.index(line[1])
+        
+        row_a = frame_data.iloc[a]
+        row_b = frame_data.iloc[b]
+
+        point_a = getFramePoint(row_a)
+        point_b = getFramePoint(row_b)
+        
+        cv2.line(video_image, point_a, point_b, red_color, thickness=2)
+    
     return cv2.resize(video_image, target_size)
 
-def getBirdView(points, colors, target_size):
+
+def getFramePoint(row):
+    '''
+    Obtiene el punto medio en la base del boundingbox
+    '''
+    return (int(row['bodyLeft'] + (row['bodyRight'] - row['bodyLeft'])/2), int(row['bodyBottom']))
+
+
+def getBirdView(points, colors, target_size, lines=[]):
     """
     Generar imagen final birdview
     Parámetros:
@@ -46,6 +67,10 @@ def getBirdView(points, colors, target_size):
     for i, point in enumerate(points):
         color = red if colors[i] else green
         cv2.circle(background, point, 7, color, -1)
+    
+    # 
+    for line in lines:
+        cv2.line(background, line[0], line[1], red, thickness=2)
 
     # area para recortar en la birdview, proporcional a la calle
     cut_posx_min, cut_posx_max = (350, 750)
@@ -83,7 +108,7 @@ def __generate_partial_image(picture, partial_image, position, transparent=False
         picture[x: x + image_height, y: y + image_width] = partial_image
         
 
-def getIntegratedView(background_image, video_image, birdview_image):
+def getIntegratedView(background_image, video_image, birdview_image, percent):
     """
     Generar la imagen final
     Parámetros:
@@ -99,6 +124,9 @@ def getIntegratedView(background_image, video_image, birdview_image):
     __generate_partial_image(content, video_image, (100, 20))
 
     __generate_partial_image(content, birdview_image, (100, 752), True)
+    
+    cv2.putText(content, "Distancia: "+str(percent)+"%", (25,115), cv2.FONT_HERSHEY_PLAIN, 1, (0,255,0), 2)
+    cv2.putText(content, "No cumple: "+str(100-percent)+"%", (25,130), cv2.FONT_HERSHEY_PLAIN, 1, (0,0,255), 2)
   
     return content
 
@@ -157,7 +185,35 @@ def pointsColorByDistance(origin_points, min_distance):
     colored_points.append(current_point)
     colors.append(nearest_color)
 
-    return colored_points, colors
+    return colored_points, colors, int((colors.count(0)/len(colors))*100)
+
+
+def pointsColorByDistanceLines(origin_points, min_distance):
+    """
+    Determinar el incumplimiento de la distancia social a través de los puntos en la birdview
+    Parámetros:
+        origin_points: puntos en la birdview
+        min_distance: distancia minima proporcional
+    Salida:
+        puntos bird eye re-organizados, lista binaria asociada a los puntos para colorear
+    """
+    bird_view_points = origin_points[:]
+    n = len(origin_points)
+    colors = [0] * n
+    lines = []
+    
+    for i,current_point in enumerate(origin_points):
+        bird_view_points.remove(current_point)
+        for j,next_point in enumerate(bird_view_points):
+            distance = get_distance(current_point, next_point)
+            if distance < min_distance:
+                colors[i] = 1
+                colors[i+j+1] = 1
+                lines.append((current_point,next_point))
+    
+    percent = 0 if n==0 else int((colors.count(0)/len(colors))*100)
+    
+    return colors, lines, percent
 
 
 def get_distance(x, y):
@@ -177,21 +233,9 @@ def framePointsToBirdPoints(frame_points, matrix):
         frame_points: puntos en vista perspectiva
         matrix: matriz de transformación
     '''
-    
-    #bird_points = []
-    #for point in frame_points:
-        #homg_point = [point[0], point[1], 1] # homogeneous coords
-        #transf_homg_point = matrix.dot(homg_point) # transform
-        #transf_homg_point /= transf_homg_point[2] # scale
-        #transf_point = transf_homg_point[:2] # remove Cartesian coords
-        #bird_points.append((int(transf_point[0]), int(transf_point[1])))
-
-    #points = np.array([[[100, 100]], [[150,100]], [[150,150]], [[150,100]]])
-    #homg_points = np.array([[x, y, 1] for [[x, y]] in np.array([frame_points])]).T
     homg_points = np.array([[point[0], point[1], 1] for point in frame_points]).T
     transf_homg_points = matrix.dot(homg_points)
     transf_homg_points /= transf_homg_points[2]
-    #transf_points = np.array([[[x,y]] for [x, y] in transf_homg_points[:2].T])
     bird_points = [(int(x),int(y)) for [x, y] in transf_homg_points[:2].T]
     return bird_points
 
