@@ -12,7 +12,7 @@ Este programa analiza un video captado por una cámara en una calle e identifica
 
 ### :video_camera: Resultado
 
-[![RESULTADO](https://img.youtube.com/vi/4grqapP_r6I/0.jpg)](https://www.youtube.com/watch?v=4grqapP_r6I)
+[![RESULTADO](./img/output.jpg)](https://www.youtube.com/watch?v=4grqapP_r6I)
 
 ### :pencil: Procedimiento
 
