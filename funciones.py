@@ -1,15 +1,15 @@
 import numpy as np
 import cv2
 
-def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors, colors, target_size, lines=[]):
+def drawBoundingBoxes(video_image, frame_data, birdv_points, colors, lines, target_size):
     """
     Dibujar a los boundingboxes
     Parámetros:
         video_image: imágen en perspectiva
         frame_data: boundingboxes de las personas en video_image
         birdv_points: lista de puntos en la vista birdview
-        birdv_points_colors: puntos organizados segun color
         colors: lista asociada a birdv_points_colors para colorear
+        lines: lineas entre distancias incumplidas
         target_size: tamaño final de la imagen
     Salida:
         imagen en perspectiva con boundingboxes
@@ -19,12 +19,10 @@ def drawBoundingBoxes(video_image, frame_data, birdv_points, birdv_points_colors
   
     i = 0
     for index, row in frame_data.iterrows():
-        k = birdv_points_colors.index(birdv_points[i])
-        color = red_color if colors[k] else green_color
+        color = red_color if colors[i] else green_color
         cv2.rectangle(video_image, ( int(row['bodyLeft']), int(row['bodyTop']) ), ( int(row['bodyRight']), int(row['bodyBottom']) ), color, 2, 1)
         i+=1
     
-    #lines = [((100,100),(200,200))]
     for line in lines:
         a = birdv_points.index(line[0])
         b = birdv_points.index(line[1])
@@ -47,12 +45,13 @@ def getFramePoint(row):
     return (int(row['bodyLeft'] + (row['bodyRight'] - row['bodyLeft'])/2), int(row['bodyBottom']))
 
 
-def getBirdView(points, colors, target_size, lines=[]):
+def getBirdView(points, colors, lines, target_size):
     """
     Generar imagen final birdview
     Parámetros:
         points: lista de puntos en vista birdview organizados
         colors: lista asociada a points para colorear
+        lines: lineas entre distancias incumplidas
         target_size: tamaño final de la imagen
     Salida:
         imagen birdview recortada y redimensionada
@@ -68,13 +67,12 @@ def getBirdView(points, colors, target_size, lines=[]):
         color = red if colors[i] else green
         cv2.circle(background, point, 7, color, -1)
     
-    # 
     for line in lines:
         cv2.line(background, line[0], line[1], red, thickness=2)
 
     # area para recortar en la birdview, proporcional a la calle
     cut_posx_min, cut_posx_max = (350, 750)
-    cut_posy_min, cut_posy_max = (260, 900)
+    cut_posy_min, cut_posy_max = (250, 890)
 
     bird_eye_view = background[cut_posy_min:cut_posy_max, 
                               cut_posx_min:cut_posx_max, 
