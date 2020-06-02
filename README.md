@@ -14,7 +14,7 @@ Este programa analiza un video captado por una cámara en una calle e identifica
 
 [![RESULTADO](https://img.youtube.com/vi/4grqapP_r6I/0.jpg)](https://www.youtube.com/watch?v=PPMXI7OtAig)
 
-### Procedimiento
+### :pencil: Procedimiento
 
 1. Selección del rectángulo a proyectar, en la vista de cámara.
 2. Transformar la vista de cámara (perspectiva) a una vista aérea plana (bird eye view).
